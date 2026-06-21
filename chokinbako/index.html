@@ -8,10 +8,12 @@
   <link rel="apple-touch-icon" href="./public/assets/wanko-catch.png" />
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f472b6" />
+  <!-- CDNはすべてバージョン固定（未固定だとCDN側の更新で突然壊れるため。2026年の真っ白事故の再発防止） -->
   <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <!-- Tailwindは未使用（classNameはすべて下の<style>の自作クラス）のため読み込まない -->
+
   <style>
     * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
     body {
@@ -1002,6 +1004,22 @@ function App() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
+</script>
+
+<!-- 安全網：万一スクリプト読み込み/描画に失敗しても、無言の真っ白ではなく再読み込み案内を出す -->
+<script>
+  setTimeout(function () {
+    var r = document.getElementById('root');
+    if (r && r.childElementCount === 0) {
+      r.innerHTML =
+        '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;color:#6b7280;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">' +
+        '<div style="font-size:2.5rem;margin-bottom:12px;">🐾</div>' +
+        '<p style="font-weight:bold;color:#374151;margin:0 0 4px;">読み込みに失敗しました</p>' +
+        '<p style="font-size:0.85rem;margin:0 0 20px;line-height:1.6;">通信環境を確認してもう一度お試しください。<br>貯金データは端末に保存されているので消えません。</p>' +
+        '<button onclick="location.reload()" style="padding:12px 28px;border-radius:12px;border:none;cursor:pointer;background:#f472b6;color:#fff;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 12px rgba(244,114,182,0.35);">再読み込み</button>' +
+        '</div>';
+    }
+  }, 8000);
 </script>
 </body>
 </html>
