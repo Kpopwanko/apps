@@ -876,7 +876,13 @@ function App() {
     </>
   );
   if (screen === 'achievement' && achievedData) {
-    return <AchievementScreen bank={achievedData} onHome={() => { setScreen('home'); setAchievedData(null); }} />;
+    return <AchievementScreen bank={achievedData} onHome={() => {
+      // 達成した貯金箱はホーム一覧から自動削除（達成履歴には残る）
+      setBanks(prev => prev.filter(b => b.id !== achievedData.id));
+      if (selId === achievedData.id) setSelId(null);
+      setScreen('home');
+      setAchievedData(null);
+    }} />;
   }
   if (screen === 'calendar' && bank) {
     return <CalendarScreen
