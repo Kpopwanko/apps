@@ -7,6 +7,11 @@
 <meta property="og:title" content="取引・交換前チェック">
 <meta property="og:description" content="取引相手のIDを入れるだけで、過去に詐欺・晒しで名前が出ていないかXでまとめて検索。ログイン・連携不要。">
 <meta name="twitter:card" content="summary">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="取引前チェック">
+<meta name="theme-color" content="#f06f9c">
 <title>取引・交換前チェック</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap">
 <style>
@@ -139,6 +144,9 @@ h2{font-size:15px;font-weight:700;margin:0 0 10px;letter-spacing:.02em}
 .maker a{color:var(--accent);font-weight:700;text-decoration:none}
 .maker a:hover{text-decoration:underline}
 .maker-sub{font-size:12px;color:var(--muted);margin:0}
+.share{display:flex;flex-direction:column;gap:10px}
+.share-url{font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;font-size:13px;background:var(--code);border-radius:8px;padding:8px 10px;word-break:break-all;user-select:all}
+.share .go{border:0;font:inherit;font-weight:700;cursor:pointer}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -186,6 +194,15 @@ h2{font-size:15px;font-weight:700;margin:0 0 10px;letter-spacing:.02em}
       <li>取引実績の投稿が、いろいろな相手とのやりとりになっているか</li>
       <li>急かしてくる、先に送ってほしがる、相場より安すぎる、などの違和感がないか</li>
     </ul>
+  </section>
+
+  <section class="panel share" aria-labelledby="share-label">
+    <h2 id="share-label">このツールを友だちに教える</h2>
+    <div class="share-url" id="share-url"></div>
+    <div class="actions">
+      <button type="button" class="go" id="share-btn">URLを共有する</button>
+      <button type="button" class="btn" id="copy-url-btn">URLをコピー</button>
+    </div>
   </section>
 
   <footer class="maker">
@@ -277,6 +294,23 @@ h2{font-size:15px;font-weight:700;margin:0 0 10px;letter-spacing:.02em}
 
   input.addEventListener("input",render);
   render();
+
+  var shareUrl=(location.protocol.indexOf("http")===0)?location.origin+location.pathname.replace(/index\.html$/,""):location.href;
+  var urlBox=document.getElementById("share-url");
+  var shareBtn=document.getElementById("share-btn");
+  var copyBtn=document.getElementById("copy-url-btn");
+  urlBox.textContent=shareUrl;
+  function copyUrl(btn,label){
+    function done(){btn.textContent="コピーしました";setTimeout(function(){btn.textContent=label;},1500);}
+    function fallback(){var r=document.createRange();r.selectNodeContents(urlBox);var s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent="選択しました。長押しでコピー";}
+    try{navigator.clipboard.writeText(shareUrl).then(done,fallback);}catch(e){fallback();}
+  }
+  shareBtn.addEventListener("click",function(){
+    if(navigator.share){
+      navigator.share({title:"取引・交換前チェック",text:"取引相手のIDを入れるだけで、詐欺・晒しの注意喚起をXでまとめて検索できるツール",url:shareUrl}).catch(function(){});
+    }else{copyUrl(shareBtn,"URLを共有する");}
+  });
+  copyBtn.addEventListener("click",function(){copyUrl(copyBtn,"URLをコピー");});
 })();
 </script>
 </body>
