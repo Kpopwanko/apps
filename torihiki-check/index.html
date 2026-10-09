@@ -109,6 +109,16 @@ h2{font-size:15px;font-weight:700;margin:0 0 10px;letter-spacing:.02em}
 }
 .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
 .chip:focus-visible,.btn:focus-visible,.go:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.chip .x{margin-left:6px;font-weight:700;opacity:.8}
+.kw-add{display:flex;gap:8px;margin-top:12px}
+.kw-add input{flex:1;min-width:0;font:inherit;font-size:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 12px;outline:none}
+.kw-add input:focus{border-color:var(--accent)}
+.kw-add input::placeholder{color:var(--muted);opacity:.6}
+.kw-add .btn{white-space:nowrap}
+.kw-add input:disabled,.kw-add .btn:disabled{opacity:.5;cursor:not-allowed}
+.kw-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}
+.linkbtn{font:inherit;font-size:13px;border:0;background:none;color:var(--accent);font-weight:700;cursor:pointer;padding:4px 0;white-space:nowrap}
+.info{font-size:13px;color:var(--muted);background:var(--code);border-radius:10px;padding:8px 12px;margin:0}
 
 .results{display:flex;flex-direction:column;gap:12px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
@@ -171,6 +181,14 @@ h2{font-size:15px;font-weight:700;margin:0 0 10px;letter-spacing:.02em}
   <section class="panel" aria-labelledby="kw-label">
     <h2 id="kw-label">いっしょに探すワード（タップで切り替え）</h2>
     <div class="chips" id="chips"></div>
+    <div class="kw-add">
+      <input id="kw-input" type="text" maxlength="20" autocomplete="off" placeholder="ワードを追加（例：偽物）" aria-label="追加するワード">
+      <button type="button" class="btn" id="kw-add-btn">追加</button>
+    </div>
+    <div class="kw-tools">
+      <span class="hint" style="margin:0">ワードを全部外すと、IDが出ている投稿をすべて探します</span>
+      <button type="button" class="linkbtn" id="kw-clear">全部外す</button>
+    </div>
   </section>
 
   <section aria-labelledby="res-label">
@@ -219,7 +237,7 @@ h2{font-size:15px;font-weight:700;margin:0 0 10px;letter-spacing:.02em}
   var KEYWORDS=[
     {w:"詐欺",on:true},{w:"晒し",on:true},{w:"注意喚起",on:true},
     {w:"未着",on:true},{w:"音信不通",on:true},{w:"持ち逃げ",on:false},
-    {w:"返金",on:false},{w:"ブロックされた",on:false},{w:"取引トラブル",on:false}
+    {w:"返金",on:false},{w:"ブロック",on:false},{w:"取引トラブル",on:false}
   ];
   var input=document.getElementById("acct");
   var hint=document.getElementById("acct-hint");
@@ -227,14 +245,47 @@ h2{font-size:15px;font-weight:700;margin:0 0 10px;letter-spacing:.02em}
   var resultsEl=document.getElementById("results");
   var HINT_OK=hint.innerHTML;
 
-  KEYWORDS.forEach(function(k,i){
-    var b=document.createElement("button");
-    b.type="button";b.className="chip";b.id="kw-"+i;b.textContent=k.w;
-    b.setAttribute("aria-pressed",k.on?"true":"false");
-    b.addEventListener("click",function(){
-      k.on=!k.on;b.setAttribute("aria-pressed",k.on?"true":"false");render();
+  function drawChips(){
+    chipsEl.innerHTML="";
+    KEYWORDS.forEach(function(k,i){
+      var b=document.createElement("button");
+      b.type="button";b.className="chip";b.id="kw-"+i;b.textContent=k.w;
+      b.setAttribute("aria-pressed",k.on?"true":"false");
+      if(k.custom){
+        var x=document.createElement("span");x.className="x";x.textContent="×";x.setAttribute("aria-label",k.w+"を削除");
+        x.addEventListener("click",function(e){e.stopPropagation();KEYWORDS.splice(KEYWORDS.indexOf(k),1);drawChips();render();});
+        b.appendChild(x);
+      }
+      b.addEventListener("click",function(){
+        k.on=!k.on;b.setAttribute("aria-pressed",k.on?"true":"false");render();
+      });
+      chipsEl.appendChild(b);
     });
-    chipsEl.appendChild(b);
+    if(kwInput)updateAdd();
+  }
+  drawChips();
+
+  var kwInput=document.getElementById("kw-input");
+  var kwAddBtn=document.getElementById("kw-add-btn");
+  var MAX_CUSTOM=3;
+  function updateAdd(){
+    var full=KEYWORDS.filter(function(k){return k.custom;}).length>=MAX_CUSTOM;
+    kwInput.disabled=full;kwAddBtn.disabled=full;
+    kwInput.placeholder=full?"追加は3個まで":"ワードを追加（例：偽物）";
+  }
+  function addWord(){
+    var w=kwInput.value.replace(/["()]/g,"").replace(/\s+/g," ").trim();
+    if(!w)return;
+    var hit=KEYWORDS.filter(function(k){return k.w===w;})[0];
+    if(hit){hit.on=true;}
+    else if(KEYWORDS.filter(function(k){return k.custom;}).length>=MAX_CUSTOM){return;}
+    else{KEYWORDS.push({w:w,on:true,custom:true});}
+    kwInput.value="";drawChips();render();
+  }
+  kwAddBtn.addEventListener("click",addWord);updateAdd();
+  kwInput.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.isComposing){e.preventDefault();addWord();}});
+  document.getElementById("kw-clear").addEventListener("click",function(){
+    KEYWORDS.forEach(function(k){k.on=false;});drawChips();render();
   });
 
   function cleanId(v){return v.trim().replace(/^(https?:\/\/)?((www|mobile)\.)?(x|twitter)\.com\//i,"").replace(/^@/,"").split(/[/?#\s]/)[0];}
@@ -276,13 +327,13 @@ h2{font-size:15px;font-weight:700;margin:0 0 10px;letter-spacing:.02em}
       hint.innerHTML=HINT_OK;hint.className="hint";
     }
 
-    var kws=KEYWORDS.filter(function(k){return k.on;}).map(function(k){return k.w;});
+    var kws=KEYWORDS.filter(function(k){return k.on;}).map(function(k){return /\s/.test(k.w)?'"'+k.w+'"':k.w;});
+    var g=kws.length?" "+orGroup(kws):"";
     if(!kws.length){
-      var p=document.createElement("p");p.className="hint err";p.textContent="ワードを1つ以上えらんでください";resultsEl.appendChild(p);return;
+      var p=document.createElement("p");p.className="info";p.textContent="ワードなしで探します。IDが出ている投稿がすべて出るので、件数が多くなることがあります。";resultsEl.appendChild(p);
     }
-    var g=orGroup(kws);
-    var q1="@"+id+" "+g+" -from:"+id;
-    var q2='"'+id+'" '+g+" -from:"+id+" -to:"+id;
+    var q1="@"+id+g+" -from:"+id;
+    var q2='"'+id+'"'+g+" -from:"+id+" -to:"+id;
     var q3="@"+id+" (交換 OR 譲渡 OR 取引) (届きました OR ありがとうございました OR 無事) -from:"+id;
     var q4='"'+id+'" 詐欺';
 
